@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Krish's Spring 2026 Deadlines</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; }
+  .today { color: #666; font-size: 13px; margin-bottom: 20px; }
+  .next-up {
+    background: linear-gradient(135deg, #fff5f5 0%, #fff0e6 100%);
+    border: 2px solid #ff6b35;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .next-up h2 { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cc4422; }
+  .next-up .item { font-size: 16px; font-weight: 600; margin: 4px 0; }
+  .next-up .countdown { font-size: 13px; color: #555; }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .filter-btn {
+    padding: 6px 12px;
+    border: 1.5px solid #d0d0d0;
+    background: #fff;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: #888; }
+  .filter-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .filter-btn.cs.active { background: #2563eb; border-color: #2563eb; }
+  .filter-btn.afm.active { background: #7c3aed; border-color: #7c3aed; }
+  .filter-btn.math.active { background: #059669; border-color: #059669; }
+  .section-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin: 24px 0 8px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+  }
+  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  .item {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e8e8e8;
+    background: #fafafa;
+    gap: 12px;
+  }
+  .item.passed { opacity: 0.5; background: #f5f5f5; }
+  .item.passed .label { text-decoration: line-through; }
+  .item.urgent { background: #fff3f0; border-color: #ff6b35; }
+  .item.soon { background: #fffbe6; border-color: #f5b800; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 50px;
+    text-align: center;
+  }
+  .pill.cs { background: #dbeafe; color: #1e40af; }
+  .pill.afm { background: #ede9fe; color: #5b21b6; }
+  .pill.math { background: #d1fae5; color: #065f46; }
+  .item-body { flex: 1; min-width: 0; }
+  .label { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+  .date { font-size: 13px; color: #666; }
+  .countdown-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #e8e8e8;
+    color: #444;
+    white-space: nowrap;
+  }
+  .countdown-badge.urgent { background: #ff6b35; color: white; }
+  .countdown-badge.soon { background: #f5b800; color: white; }
+  .countdown-badge.past { background: #ccc; color: #666; }
+  .legend {
+    margin-top: 32px;
+    padding: 12px;
+    background: #f8f8f8;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #666;
+  }
+  .legend strong { color: #333; }
+  .empty {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+  }
+  details summary {
+    cursor: pointer;
+    user-select: none;
+    color: #888;
+    font-size: 13px;
+    padding: 8px 0;
+  }
+  details[open] summary { color: #444; }
+  .footer { text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 11px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>Krish's Spring 2026 Deadlines</h1>
+<div class="today" id="today-line"></div>
+
+<div class="next-up" id="next-up"></div>
+
+<div class="filters" id="filters">
+  <button class="filter-btn active" data-filter="all">All courses</button>
+  <button class="filter-btn cs" data-filter="cs">CS 231</button>
+  <button class="filter-btn afm" data-filter="afm">AFM 231 (Law)</button>
+  <button class="filter-btn math" data-filter="math">CO 380 (Math)</button>
+</div>
+
+<div class="section-title">Upcoming</div>
+<div class="item-list" id="upcoming-list"></div>
+
+<details id="passed-section">
+  <summary>Show past deadlines</summary>
+  <div class="item-list" id="passed-list" style="margin-top: 8px;"></div>
+</details>
+
+<div class="legend">
+  <strong>Color guide:</strong> 🟠 Due within 3 days · 🟡 Due within 7 days · ⚪ Later · ✅ Past<br>
+  <strong>Courses:</strong> CS 231 = Algorithmic Problem Solving (online, in-person final) · AFM 231 = Business Law (all online) · CO 380 = Mathematical Discovery & Invention (in-person lectures)
+</div>
+
+<div class="footer">Times are Eastern. Filter saved locally.</div>
+
+<script>
+// All deadlines for Spring 2026
+const deadlines = [
+  // CS 231 - times are 4:00 PM ET
+  { course: 'cs', label: 'CS 231 — Quiz A', date: '2026-05-19T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz B', date: '2026-05-26T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Assignment 0', date: '2026-05-27T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz C', date: '2026-06-02T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Assignment 1', date: '2026-06-03T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz D', date: '2026-06-16T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz E', date: '2026-06-23T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Assignment 2', date: '2026-06-24T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz F', date: '2026-07-07T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz G', date: '2026-07-14T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Assignment 3', date: '2026-07-15T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Quiz H', date: '2026-07-28T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Assignment 4', date: '2026-07-31T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Popups due', date: '2026-08-05T16:00:00-04:00' },
+  { course: 'cs', label: 'CS 231 — Final Exam (in-person)', date: '2026-08-07T09:00:00-04:00', note: 'Aug 7 or 8 — exact day TBD by registrar' },
+
+  // AFM 231 — Business Law
+  { course: 'afm', label: 'AFM 231 — Quiz 1', date: '2026-05-22T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 1 closes', date: '2026-05-27T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Check Assignment 2 group', date: '2026-05-27T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 2', date: '2026-05-29T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Introduce yourself to group', date: '2026-05-29T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 2 closes', date: '2026-06-03T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 3', date: '2026-06-05T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 3 closes', date: '2026-06-10T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Assignment 1', date: '2026-06-12T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 4', date: '2026-06-19T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 4 closes', date: '2026-06-24T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 5', date: '2026-06-26T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 5 closes', date: '2026-07-02T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 6', date: '2026-07-03T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 7', date: '2026-07-10T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Practice Crowdmark Submission', date: '2026-07-12T00:01:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 6 closes', date: '2026-07-15T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 8', date: '2026-07-17T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 7 closes', date: '2026-07-22T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Quiz 9', date: '2026-07-24T19:30:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Discussion 8 closes', date: '2026-07-29T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Assignment 2', date: '2026-07-31T23:59:00-04:00' },
+  { course: 'afm', label: 'AFM 231 — Final Exam (virtual, open book)', date: '2026-08-10T23:59:00-04:00', note: 'Opens Aug 8, due Aug 10. Must score ≥50%' },
+
+  // CO 380 - Math, all 4:30 PM
+  { course: 'math', label: 'CO 380 — Assignment 1', date: '2026-05-27T16:30:00-04:00' },
+  { course: 'math', label: 'CO 380 — Assignment 2', date: '2026-06-10T16:30:00-04:00' },
+  { course: 'math', label: 'CO 380 — Assignment 3', date: '2026-06-24T16:30:00-04:00' },
+  { course: 'math', label: 'CO 380 — Assignment 4', date: '2026-07-08T16:30:00-04:00' },
+  { course: 'math', label: 'CO 380 — Assignment 5', date: '2026-07-22T16:30:00-04:00' },
+  { course: 'math', label: 'CO 380 — Assignment 6', date: '2026-08-05T16:30:00-04:00' },
+];
+
+const courseNames = { cs: 'CS 231', afm: 'AFM 231', math: 'CO 380' };
+
+function pad(n) { return n < 10 ? '0' + n : n; }
+function fmtDate(d) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  let h = d.getHours();
+  const m = pad(d.getMinutes());
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${h}:${m} ${ampm}`;
+}
+
+function countdown(date, now) {
+  const diff = date - now;
+  if (diff < 0) {
+    const days = Math.floor(-diff / 86400000);
+    if (days === 0) return 'Earlier today';
+    if (days === 1) return 'Yesterday';
+    return `${days} days ago`;
+  }
+  const totalMin = Math.floor(diff / 60000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  if (days === 0 && hours === 0) return `<1h`;
+  if (days === 0) return `${hours}h`;
+  if (days === 1) return `Tomorrow`;
+  return `${days} days`;
+}
+
+function urgency(date, now) {
+  const diff = date - now;
+  if (diff < 0) return 'past';
+  const days = diff / 86400000;
+  if (days <= 3) return 'urgent';
+  if (days <= 7) return 'soon';
+  return 'later';
+}
+
+function render() {
+  const now = new Date();
+  const filter = localStorage.getItem('deadline-filter') || 'all';
+
+  // Today line
+  document.getElementById('today-line').textContent =
+    'Today: ' + now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Sort by date
+  const sorted = [...deadlines].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const upcoming = sorted.filter(d => new Date(d.date) >= now);
+  const passed = sorted.filter(d => new Date(d.date) < now).reverse();
+
+  // Next-up panel
+  const next = upcoming.filter(d => filter === 'all' || d.course === filter)[0];
+  const nextUp = document.getElementById('next-up');
+  if (next) {
+    const d = new Date(next.date);
+    nextUp.innerHTML = `
+      <h2>⏰ Next deadline</h2>
+      <div class="item">${next.label}</div>
+      <div class="countdown">${fmtDate(d)} · <strong>${countdown(d, now)}</strong> from now</div>
+    `;
+  } else {
+    nextUp.innerHTML = '<h2>✅ All done</h2><div class="countdown">No more upcoming deadlines for this filter.</div>';
+  }
+
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+
+  // Render lists
+  function renderList(items, target, isPast = false) {
+    const filtered = items.filter(d => filter === 'all' || d.course === filter);
+    if (filtered.length === 0) {
+      target.innerHTML = '<div class="empty">Nothing here.</div>';
+      return;
+    }
+    target.innerHTML = filtered.map(d => {
+      const dt = new Date(d.date);
+      const u = urgency(dt, now);
+      const cls = isPast ? 'passed' : (u === 'urgent' ? 'urgent' : u === 'soon' ? 'soon' : '');
+      const badgeClass = u;
+      return `
+        <div class="item ${cls}">
+          <span class="pill ${d.course}">${courseNames[d.course]}</span>
+          <div class="item-body">
+            <div class="label">${d.label.replace(/^.*?— /, '')}</div>
+            <div class="date">${fmtDate(dt)}${d.note ? ' · ' + d.note : ''}</div>
+          </div>
+          <span class="countdown-badge ${badgeClass}">${countdown(dt, now)}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderList(upcoming, document.getElementById('upcoming-list'));
+  renderList(passed, document.getElementById('passed-list'), true);
+}
+
+// Filter clicks
+document.getElementById('filters').addEventListener('click', e => {
+  if (e.target.matches('.filter-btn')) {
+    localStorage.setItem('deadline-filter', e.target.dataset.filter);
+    render();
+  }
+});
+
+render();
+// Re-render every minute so countdowns stay fresh
+setInterval(render, 60000);
+</script>
+</body>
+</html>
