@@ -70,3 +70,5 @@ To update later: edit `index.html`, then `git add . && git commit -m "update" &&
 - **GitHub Pages** if you want a permanent, predictable URL like `krish-rai.github.io/deadlines` to bookmark.
 
 You can also do both — the site is one file, it'll work anywhere.
+
+<!-- watcher test 16:13:17 -->
