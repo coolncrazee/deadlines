@@ -34,7 +34,12 @@
     padding: 16px;
     margin-bottom: 24px;
   }
+  .next-up.has-missed {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: #dc2626;
+  }
   .next-up h2 { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cc4422; }
+  .next-up.has-missed h2 { color: #991b1b; }
   .next-up .item-title { font-size: 16px; font-weight: 600; margin: 4px 0; }
   .next-up .times { font-size: 13px; color: #555; margin-top: 6px; }
   .next-up .countdown { font-size: 13px; color: #555; margin-top: 4px; font-weight: 600; }
@@ -64,6 +69,7 @@
   .filter-btn.afm.active { background: #7c3aed; border-color: #7c3aed; }
   .filter-btn.math.active { background: #059669; border-color: #059669; }
   .filter-btn.goals.active { background: #db2777; border-color: #db2777; }
+  .filter-btn.finished.active { background: #16a34a; border-color: #16a34a; }
   .section-title {
     font-size: 14px;
     text-transform: uppercase;
@@ -72,6 +78,26 @@
     margin: 24px 0 8px 0;
     border-bottom: 1px solid #eee;
     padding-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title.missed-title {
+    color: #dc2626;
+    border-bottom-color: #fecaca;
+    font-weight: 700;
+  }
+  .section-title .count-badge {
+    background: #e8e8e8;
+    color: #555;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .section-title.missed-title .count-badge {
+    background: #dc2626;
+    color: white;
   }
   .item-list { display: flex; flex-direction: column; gap: 8px; }
   .item {
@@ -83,10 +109,16 @@
     background: #fafafa;
     gap: 12px;
   }
-  .item.passed { opacity: 0.55; background: #f5f5f5; }
-  .item.passed .label { text-decoration: line-through; }
   .item.urgent { background: #fff3f0; border-color: #ff6b35; }
   .item.soon { background: #fffbe6; border-color: #f5b800; }
+  .item.missed { background: #fee2e2; border: 2px solid #dc2626; }
+  .item.finished { background: #f0fdf4; border-color: #bbf7d0; opacity: 0.85; }
+  .item.finished .label::before {
+    content: "✓ ";
+    color: #16a34a;
+    font-weight: 700;
+  }
+  .item.finished .label { color: #166534; }
   .pill {
     display: inline-block;
     padding: 2px 8px;
@@ -119,7 +151,8 @@
   }
   .countdown-badge.urgent { background: #ff6b35; color: white; }
   .countdown-badge.soon { background: #f5b800; color: white; }
-  .countdown-badge.past { background: #ccc; color: #666; }
+  .countdown-badge.missed { background: #dc2626; color: white; }
+  .countdown-badge.finished { background: #16a34a; color: white; }
   .legend {
     margin-top: 32px;
     padding: 12px;
@@ -135,14 +168,6 @@
     padding: 20px;
     font-style: italic;
   }
-  details summary {
-    cursor: pointer;
-    user-select: none;
-    color: #888;
-    font-size: 13px;
-    padding: 8px 0;
-  }
-  details[open] summary { color: #444; }
   .footer { text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 11px; color: #aaa; }
   @media (max-width: 500px) {
     .item { flex-wrap: wrap; }
@@ -163,32 +188,40 @@
   <button class="filter-btn afm" data-filter="afm">AFM 231 (Law)</button>
   <button class="filter-btn math" data-filter="math">CO 380 (Math)</button>
   <button class="filter-btn goals" data-filter="goals">Personal goals</button>
+  <button class="filter-btn finished" data-filter="finished">✓ Finished</button>
 </div>
 
-<div class="section-title">Upcoming</div>
-<div class="item-list" id="upcoming-list"></div>
+<div id="missed-section" style="display:none;">
+  <div class="section-title missed-title">⚠️ Overdue <span class="count-badge" id="missed-count">0</span></div>
+  <div class="item-list" id="missed-list"></div>
+</div>
 
-<details id="passed-section">
-  <summary>Show past deadlines</summary>
-  <div class="item-list" id="passed-list" style="margin-top: 8px;"></div>
-</details>
+<div id="upcoming-section">
+  <div class="section-title">Upcoming</div>
+  <div class="item-list" id="upcoming-list"></div>
+</div>
+
+<div id="finished-section" style="display:none;">
+  <div class="section-title">✓ Finished <span class="count-badge" id="finished-count">0</span></div>
+  <div class="item-list" id="finished-list"></div>
+</div>
 
 <div class="legend">
-  <strong>Color guide:</strong> 🟠 Due within 3 days · 🟡 Due within 7 days · ⚪ Later · ✅ Past<br>
-  <strong>Courses:</strong> CS 231 = Algorithmic Problem Solving (online + in-person final) · AFM 231 = Business Law (all online) · CO 380 = Math Discovery &amp; Invention (in-person lectures)<br>
-  <strong>Times:</strong> University deadlines are set in Eastern Time (ET). The page automatically converts them to whatever timezone you're viewing from.
+  <strong>Color guide:</strong> 🔴 Overdue (not done) · 🟠 Due within 3 days · 🟡 Due within 7 days · ⚪ Later · ✅ Finished<br>
+  <strong>Courses:</strong> CS 231 = Algorithmic Problem Solving · AFM 231 = Business Law · CO 380 = Math Discovery &amp; Invention<br>
+  <strong>Times:</strong> University deadlines are set in Eastern Time (ET). The page converts them to your local timezone automatically.
 </div>
 
 <div class="footer">Filter saved locally. Source: <a href="https://github.com/coolncrazee/deadlines">github.com/coolncrazee/deadlines</a></div>
 
 <script>
-// Spring 2026 deadlines — stored with explicit timezone offset so each converts correctly to any viewer's local time.
-// To add a personal goal, push a new object into this array with course: 'goals'.
+// Each deadline: { course, label, date (ISO with offset), done?, note? }
+// Set done: true once Krish reports completing it. Items past deadline without done:true show as Overdue at the top.
 const deadlines = [
   // CS 231 - 4:00 PM ET
-  { course: 'cs', label: 'Quiz A', date: '2026-05-19T16:00:00-04:00' },
-  { course: 'cs', label: 'Quiz B', date: '2026-05-26T16:00:00-04:00' },
-  { course: 'cs', label: 'Assignment 0', date: '2026-05-27T16:00:00-04:00' },
+  { course: 'cs', label: 'Quiz A', date: '2026-05-19T16:00:00-04:00', done: true },
+  { course: 'cs', label: 'Quiz B', date: '2026-05-26T16:00:00-04:00', done: true },
+  { course: 'cs', label: 'Assignment 0', date: '2026-05-27T16:00:00-04:00', done: true },
   { course: 'cs', label: 'Quiz C', date: '2026-06-02T16:00:00-04:00' },
   { course: 'cs', label: 'Assignment 1', date: '2026-06-03T16:00:00-04:00' },
   { course: 'cs', label: 'Quiz D', date: '2026-06-16T16:00:00-04:00' },
@@ -235,9 +268,7 @@ const deadlines = [
   { course: 'math', label: 'Assignment 5', date: '2026-07-22T16:30:00-04:00' },
   { course: 'math', label: 'Assignment 6', date: '2026-08-05T16:30:00-04:00' },
 
-  // Personal goals — add new entries here as Krish shares them.
-  // Example shape:
-  // { course: 'goals', label: 'Ship MVP v1', date: '2026-06-15T17:00:00+05:30', note: 'Optional context' },
+  // Personal goals
   { course: 'goals', label: 'Resubmit MetaCogni Chrome Listing', date: '2026-05-25T23:59:00+05:30', note: 'End of day IST' },
 ];
 
@@ -287,14 +318,9 @@ function getLocalTzLabel() {
   }
 }
 
+// Countdown for upcoming items
 function countdown(date, now) {
   const diff = date - now;
-  if (diff < 0) {
-    const days = Math.floor(-diff / 86400000);
-    if (days === 0) return 'Earlier today';
-    if (days === 1) return 'Yesterday';
-    return `${days}d ago`;
-  }
   const totalMin = Math.floor(diff / 60000);
   const days = Math.floor(totalMin / 1440);
   const hours = Math.floor((totalMin % 1440) / 60);
@@ -304,9 +330,23 @@ function countdown(date, now) {
   return `${days} days`;
 }
 
-function urgency(date, now) {
+// "Late by" countup for missed items
+function lateBy(date, now) {
+  const diff = now - date;
+  const totalMin = Math.floor(diff / 60000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  if (days === 0 && hours === 0) {
+    const mins = totalMin;
+    return `${mins}m late`;
+  }
+  if (days === 0) return `${hours}h late`;
+  if (days === 1) return `1 day late`;
+  return `${days} days late`;
+}
+
+function urgencyForUpcoming(date, now) {
   const diff = date - now;
-  if (diff < 0) return 'past';
   const days = diff / 86400000;
   if (days <= 3) return 'urgent';
   if (days <= 7) return 'soon';
@@ -324,14 +364,56 @@ function render() {
   document.getElementById('tz-banner').innerHTML =
     `🌍 Times shown in <strong>your local timezone</strong> (${tz.tz}, ${tz.offset}). Original ET time shown in grey for reference.`;
 
-  const sorted = [...deadlines].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const upcoming = sorted.filter(d => new Date(d.date) >= now);
-  const passed = sorted.filter(d => new Date(d.date) < now).reverse();
+  // Partition deadlines into three buckets
+  const done = deadlines.filter(d => d.done);
+  const notDone = deadlines.filter(d => !d.done);
+  const missed = notDone.filter(d => new Date(d.date) < now).sort((a, b) => new Date(a.date) - new Date(b.date)); // oldest-overdue first
+  const upcoming = notDone.filter(d => new Date(d.date) >= now).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const finished = [...done].sort((a, b) => new Date(b.date) - new Date(a.date)); // most recent deadline first
 
-  const next = upcoming.filter(d => filter === 'all' || d.course === filter)[0];
+  // Active filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+
+  // Apply filter for display purposes
+  const matchesFilter = (d) => filter === 'all' || d.course === filter;
+  const missedFiltered = missed.filter(matchesFilter);
+  const upcomingFiltered = upcoming.filter(matchesFilter);
+  const finishedFiltered = finished.filter(matchesFilter || (filter === 'finished'));
+  // ^ when filter === 'finished', show all finished regardless of course; we handle below
+
+  // Next-up panel — prioritize missed over upcoming
   const nextUp = document.getElementById('next-up');
-  if (next) {
+  if (filter === 'finished') {
+    // In Finished view, the next-up panel is less relevant
+    if (finished.length > 0) {
+      const last = finished[0];
+      const d = new Date(last.date);
+      nextUp.classList.remove('has-missed');
+      nextUp.innerHTML = `
+        <h2>✓ Most recently finished</h2>
+        <div class="item-title">${courseNames[last.course]}: ${last.label}</div>
+        <div class="times">Was due: ${fmtLocal(d)} <span class="et-time">(ET: ${fmtET(d)})</span></div>
+      `;
+    } else {
+      nextUp.classList.remove('has-missed');
+      nextUp.innerHTML = '<h2>Nothing finished yet</h2><div class="times">Mark items as done and they show here.</div>';
+    }
+  } else if (missedFiltered.length > 0) {
+    const m = missedFiltered[0]; // oldest-overdue
+    const d = new Date(m.date);
+    nextUp.classList.add('has-missed');
+    nextUp.innerHTML = `
+      <h2>⚠️ ${missedFiltered.length} overdue ${missedFiltered.length === 1 ? 'item' : 'items'} — oldest:</h2>
+      <div class="item-title">${courseNames[m.course]}: ${m.label}</div>
+      <div class="times">Was due: <strong>${fmtLocal(d)}</strong> <span class="et-time">(ET: ${fmtET(d)})</span></div>
+      <div class="countdown">${lateBy(d, now)}</div>
+    `;
+  } else if (upcomingFiltered.length > 0) {
+    const next = upcomingFiltered[0];
     const d = new Date(next.date);
+    nextUp.classList.remove('has-missed');
     nextUp.innerHTML = `
       <h2>⏰ Next deadline</h2>
       <div class="item-title">${courseNames[next.course]}: ${next.label}</div>
@@ -339,42 +421,78 @@ function render() {
       <div class="countdown">${countdown(d, now)} from now</div>
     `;
   } else {
-    nextUp.innerHTML = '<h2>✅ All done</h2><div class="times">No more upcoming deadlines for this filter.</div>';
+    nextUp.classList.remove('has-missed');
+    nextUp.innerHTML = '<h2>✅ All done</h2><div class="times">No outstanding deadlines for this filter.</div>';
   }
 
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.filter === filter);
-  });
-
-  function renderList(items, target, isPast = false) {
-    const filtered = items.filter(d => filter === 'all' || d.course === filter);
-    if (filtered.length === 0) {
-      target.innerHTML = '<div class="empty">Nothing here.</div>';
-      return;
+  // Renderers
+  function renderItem(d, kind) {
+    const dt = new Date(d.date);
+    let cls = '';
+    let badgeCls = '';
+    let badgeText = '';
+    if (kind === 'missed') {
+      cls = 'missed';
+      badgeCls = 'missed';
+      badgeText = lateBy(dt, now);
+    } else if (kind === 'finished') {
+      cls = 'finished';
+      badgeCls = 'finished';
+      badgeText = '✓ Done';
+    } else {
+      const u = urgencyForUpcoming(dt, now);
+      cls = u === 'urgent' ? 'urgent' : u === 'soon' ? 'soon' : '';
+      badgeCls = u;
+      badgeText = countdown(dt, now);
     }
-    target.innerHTML = filtered.map(d => {
-      const dt = new Date(d.date);
-      const u = urgency(dt, now);
-      const cls = isPast ? 'passed' : (u === 'urgent' ? 'urgent' : u === 'soon' ? 'soon' : '');
-      return `
-        <div class="item ${cls}">
-          <span class="pill ${d.course}">${courseNames[d.course]}</span>
-          <div class="item-body">
-            <div class="label">${d.label}</div>
-            <div class="date">
-              <span class="your-time">${fmtLocal(dt)}</span>
-              <span class="et-time">(ET: ${fmtET(dt)})</span>
-            </div>
-            ${d.note ? `<div class="note">${d.note}</div>` : ''}
+    return `
+      <div class="item ${cls}">
+        <span class="pill ${d.course}">${courseNames[d.course]}</span>
+        <div class="item-body">
+          <div class="label">${d.label}</div>
+          <div class="date">
+            <span class="your-time">${fmtLocal(dt)}</span>
+            <span class="et-time">(ET: ${fmtET(dt)})</span>
           </div>
-          <span class="countdown-badge ${u}">${countdown(dt, now)}</span>
+          ${d.note ? `<div class="note">${d.note}</div>` : ''}
         </div>
-      `;
-    }).join('');
+        <span class="countdown-badge ${badgeCls}">${badgeText}</span>
+      </div>
+    `;
   }
 
-  renderList(upcoming, document.getElementById('upcoming-list'));
-  renderList(passed, document.getElementById('passed-list'), true);
+  const missedSection = document.getElementById('missed-section');
+  const upcomingSection = document.getElementById('upcoming-section');
+  const finishedSection = document.getElementById('finished-section');
+
+  if (filter === 'finished') {
+    // Show only finished
+    missedSection.style.display = 'none';
+    upcomingSection.style.display = 'none';
+    finishedSection.style.display = '';
+    const list = document.getElementById('finished-list');
+    document.getElementById('finished-count').textContent = finished.length;
+    list.innerHTML = finished.length > 0
+      ? finished.map(d => renderItem(d, 'finished')).join('')
+      : '<div class="empty">Nothing finished yet.</div>';
+  } else {
+    // Show missed + upcoming, hide finished
+    finishedSection.style.display = 'none';
+
+    if (missedFiltered.length > 0) {
+      missedSection.style.display = '';
+      document.getElementById('missed-count').textContent = missedFiltered.length;
+      document.getElementById('missed-list').innerHTML = missedFiltered.map(d => renderItem(d, 'missed')).join('');
+    } else {
+      missedSection.style.display = 'none';
+    }
+
+    upcomingSection.style.display = '';
+    const upList = document.getElementById('upcoming-list');
+    upList.innerHTML = upcomingFiltered.length > 0
+      ? upcomingFiltered.map(d => renderItem(d, 'upcoming')).join('')
+      : '<div class="empty">Nothing upcoming.</div>';
+  }
 }
 
 document.getElementById('filters').addEventListener('click', e => {
