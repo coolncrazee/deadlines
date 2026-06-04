@@ -1,85 +1,106 @@
+#!/usr/bin/env python3
+"""Generate two ICS calendar feeds from index.html:
+   - deadlines.ics  — course deadlines (with 1 day + 1 hour alarms)
+   - study.ics      — daily 1hr study sessions (with 15 min alarm)
+"""
 from datetime import datetime, timedelta, timezone
-import json, re
+import re
 
-# Read deadlines from index.html
 with open('/sessions/vigilant-magical-carson/mnt/outputs/deadlines-site/index.html') as f:
     html = f.read()
 
-# Extract the deadlines array
 m = re.search(r'const deadlines = \[(.*?)\n\];', html, re.DOTALL)
 arr_text = m.group(1)
 
-# Parse each line that has a deadline object
 items = []
 for line in arr_text.split('\n'):
-    obj_match = re.search(r"\{\s*course:\s*'([^']+)',\s*label:\s*'([^']+)',\s*date:\s*'([^']+)'(.*)\}", line)
-    if not obj_match:
+    if 'date:' not in line or 'course:' not in line:
         continue
-    course = obj_match.group(1)
-    label = obj_match.group(2)
-    date_str = obj_match.group(3)
-    rest = obj_match.group(4)
-    done = 'done: true' in rest
-    note_match = re.search(r"note:\s*'([^']+)'", rest)
-    note = note_match.group(1) if note_match else ''
-    items.append({'course': course, 'label': label, 'date': date_str, 'done': done, 'note': note})
+    course_m = re.search(r"course:\s*'([^']+)'", line)
+    label_m = re.search(r"label:\s*'([^']+)'", line)
+    date_m = re.search(r"date:\s*'([^']+)'", line)
+    if not (course_m and label_m and date_m):
+        continue
+    item = {
+        'course': course_m.group(1),
+        'label': label_m.group(1),
+        'date': date_m.group(1),
+        'done': 'done: true' in line,
+        'is_study': "type: 'study'" in line,
+    }
+    note_m = re.search(r"note:\s*'([^']+)'", line)
+    item['note'] = note_m.group(1) if note_m else ''
+    items.append(item)
 
 course_names = {'cs': 'CS 231', 'afm': 'AFM 231', 'math': 'CO 380', 'goals': 'Goal'}
 
-# Only include not-done items
-upcoming = [i for i in items if not i['done']]
+def build_ics(items, cal_name, cal_desc, alarms):
+    lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Krish//Spring 2026//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        f'X-WR-CALNAME:{cal_name}',
+        f'X-WR-CALDESC:{cal_desc}',
+        'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
+        'X-PUBLISHED-TTL:PT1H',
+    ]
+    now_stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 
-# Generate ICS
-lines = []
-lines.append('BEGIN:VCALENDAR')
-lines.append('VERSION:2.0')
-lines.append('PRODID:-//Krish//Spring 2026 Deadlines//EN')
-lines.append('CALSCALE:GREGORIAN')
-lines.append('METHOD:PUBLISH')
-lines.append('X-WR-CALNAME:Krish - Spring 2026 Deadlines')
-lines.append('X-WR-CALDESC:Auto-updated tracker. Source: coolncrazee/deadlines')
-lines.append('REFRESH-INTERVAL;VALUE=DURATION:PT1H')
-lines.append('X-PUBLISHED-TTL:PT1H')
+    for i, item in enumerate(items):
+        if item['done']:
+            continue
+        dt = datetime.fromisoformat(item['date'])
+        utc = dt.astimezone(timezone.utc)
+        end_utc = utc + timedelta(minutes=60 if item['is_study'] else 15)
 
-now_stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        summary = f"{'📚 ' if item['is_study'] else ''}{course_names[item['course']]}: {item['label']}"
+        desc = item['note'] if item['note'] else f"{course_names[item['course']]} {'study session' if item['is_study'] else 'deadline'}"
+        kind = 'study' if item['is_study'] else 'dl'
+        uid = f"krish-{kind}-{item['course']}-{i}-{utc.strftime('%Y%m%dT%H%M%SZ')}@deadlines.krish"
 
-for i, item in enumerate(upcoming):
-    # Parse date with offset (e.g. -04:00 or +05:30)
-    dt = datetime.fromisoformat(item['date'])
-    utc = dt.astimezone(timezone.utc)
-    end_utc = utc + timedelta(minutes=15)
-    
-    dtstart = utc.strftime('%Y%m%dT%H%M%SZ')
-    dtend = end_utc.strftime('%Y%m%dT%H%M%SZ')
-    
-    summary = f"{course_names[item['course']]}: {item['label']}"
-    desc = item['note'] if item['note'] else f"{course_names[item['course']]} deadline"
-    uid = f"krish-{item['course']}-{i}-{dtstart}@deadlines.krish"
-    
-    lines.append('BEGIN:VEVENT')
-    lines.append(f'UID:{uid}')
-    lines.append(f'DTSTAMP:{now_stamp}')
-    lines.append(f'DTSTART:{dtstart}')
-    lines.append(f'DTEND:{dtend}')
-    lines.append(f'SUMMARY:{summary}')
-    lines.append(f'DESCRIPTION:{desc}')
-    # 1 day before
-    lines.append('BEGIN:VALARM')
-    lines.append('TRIGGER:-P1D')
-    lines.append('ACTION:DISPLAY')
-    lines.append(f'DESCRIPTION:Tomorrow: {summary}')
-    lines.append('END:VALARM')
-    # 1 hour before
-    lines.append('BEGIN:VALARM')
-    lines.append('TRIGGER:-PT1H')
-    lines.append('ACTION:DISPLAY')
-    lines.append(f'DESCRIPTION:In 1 hour: {summary}')
-    lines.append('END:VALARM')
-    lines.append('END:VEVENT')
+        lines += [
+            'BEGIN:VEVENT',
+            f'UID:{uid}',
+            f'DTSTAMP:{now_stamp}',
+            f'DTSTART:{utc.strftime("%Y%m%dT%H%M%SZ")}',
+            f'DTEND:{end_utc.strftime("%Y%m%dT%H%M%SZ")}',
+            f'SUMMARY:{summary}',
+            f'DESCRIPTION:{desc}',
+        ]
+        for trigger, label_prefix in alarms:
+            lines += [
+                'BEGIN:VALARM',
+                f'TRIGGER:{trigger}',
+                'ACTION:DISPLAY',
+                f'DESCRIPTION:{label_prefix} {summary}',
+                'END:VALARM',
+            ]
+        lines.append('END:VEVENT')
 
-lines.append('END:VCALENDAR')
+    lines.append('END:VCALENDAR')
+    return '\r\n'.join(lines) + '\r\n'
+
+deadline_items = [it for it in items if not it['is_study']]
+study_items = [it for it in items if it['is_study']]
 
 with open('/sessions/vigilant-magical-carson/mnt/outputs/deadlines-site/deadlines.ics', 'w') as f:
-    f.write('\r\n'.join(lines) + '\r\n')
+    f.write(build_ics(
+        deadline_items,
+        'Krish — Spring 2026 Deadlines',
+        'Course deadlines (auto-updated)',
+        [('-P1D', 'Tomorrow:'), ('-PT1H', 'In 1 hour:')]
+    ))
 
-print(f"Generated {len(upcoming)} events in deadlines.ics")
+with open('/sessions/vigilant-magical-carson/mnt/outputs/deadlines-site/study.ics', 'w') as f:
+    f.write(build_ics(
+        study_items,
+        'Krish — Spring 2026 Study Plan',
+        '1hr daily study sessions (auto-updated)',
+        [('-PT15M', 'Starts in 15 min:')]
+    ))
+
+dl_active = sum(1 for it in deadline_items if not it['done'])
+st_active = sum(1 for it in study_items if not it['done'])
+print(f"deadlines.ics: {dl_active} events  ·  study.ics: {st_active} events")
