@@ -27,6 +27,46 @@
     color: #1e40af;
     margin-bottom: 20px;
   }
+  .today-study {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 2px solid #16a34a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .today-study .icon {
+    font-size: 22px;
+  }
+  .today-study .body { flex: 1; min-width: 0; }
+  .today-study h2 {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .today-study .item-title { font-size: 15px; font-weight: 600; color: #14532d; }
+  .today-study .meta { font-size: 12px; color: #4b6f5a; margin-top: 2px; }
+  .today-study.done { background: #f0fdf4; border-color: #86efac; opacity: 0.75; }
+  .today-study.done h2::after { content: "✓ Done today"; color: #16a34a; font-weight: 700; margin-left: 4px; }
+  .today-study .mark-btn {
+    padding: 6px 12px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .today-study .mark-btn:hover { background: #15803d; }
+  .today-study.done .mark-btn { display: none; }
   .next-up {
     background: linear-gradient(135deg, #fff5f5 0%, #fff0e6 100%);
     border: 2px solid #ff6b35;
@@ -70,6 +110,7 @@
   .filter-btn.math.active { background: #059669; border-color: #059669; }
   .filter-btn.goals.active { background: #db2777; border-color: #db2777; }
   .filter-btn.finished.active { background: #16a34a; border-color: #16a34a; }
+  .filter-btn.study.active { background: #15803d; border-color: #15803d; }
   .section-title {
     font-size: 14px;
     text-transform: uppercase;
@@ -87,6 +128,10 @@
     border-bottom-color: #fecaca;
     font-weight: 700;
   }
+  .section-title.study-title {
+    color: #15803d;
+    border-bottom-color: #bbf7d0;
+  }
   .section-title .count-badge {
     background: #e8e8e8;
     color: #555;
@@ -97,6 +142,10 @@
   }
   .section-title.missed-title .count-badge {
     background: #dc2626;
+    color: white;
+  }
+  .section-title.study-title .count-badge {
+    background: #15803d;
     color: white;
   }
   .item-list { display: flex; flex-direction: column; gap: 8px; }
@@ -119,6 +168,12 @@
     font-weight: 700;
   }
   .item.finished .label { color: #166534; }
+  .item.study-future { background: #f0fdf4; border-color: #bbf7d0; }
+  .item.study-today { background: #ecfdf5; border: 2px solid #16a34a; }
+  .item.study-done { background: #f0fdf4; border-color: #86efac; opacity: 0.7; }
+  .item.study-done .label::before { content: "✓ "; color: #16a34a; font-weight: 700; }
+  .item.study-skipped { background: #f5f5f5; border-color: #e0e0e0; opacity: 0.55; }
+  .item.study-skipped .label { text-decoration: line-through; color: #888; }
   .pill {
     display: inline-block;
     padding: 2px 8px;
@@ -134,6 +189,7 @@
   .pill.afm { background: #ede9fe; color: #5b21b6; }
   .pill.math { background: #d1fae5; color: #065f46; }
   .pill.goals { background: #fce7f3; color: #9d174d; }
+  .pill.study-pill { background: #bbf7d0; color: #14532d; }
   .item-body { flex: 1; min-width: 0; }
   .label { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
   .date { font-size: 13px; color: #555; }
@@ -153,6 +209,9 @@
   .countdown-badge.soon { background: #f5b800; color: white; }
   .countdown-badge.missed { background: #dc2626; color: white; }
   .countdown-badge.finished { background: #16a34a; color: white; }
+  .countdown-badge.study { background: #15803d; color: white; }
+  .countdown-badge.study-skipped { background: #999; color: white; }
+  .countdown-badge.study-neutral { background: #d1fae5; color: #065f46; }
   .legend {
     margin-top: 32px;
     padding: 12px;
@@ -180,6 +239,8 @@
 <div class="today" id="today-line"></div>
 <div class="tz-banner" id="tz-banner"></div>
 
+<div id="today-study-card"></div>
+
 <div class="next-up" id="next-up"></div>
 
 <div class="filters" id="filters">
@@ -188,6 +249,7 @@
   <button class="filter-btn afm" data-filter="afm">AFM 231 (Law)</button>
   <button class="filter-btn math" data-filter="math">CO 380 (Math)</button>
   <button class="filter-btn goals" data-filter="goals">Personal goals</button>
+  <button class="filter-btn study" data-filter="study">📚 Study Plan</button>
   <button class="filter-btn finished" data-filter="finished">✓ Finished</button>
 </div>
 
@@ -201,22 +263,27 @@
   <div class="item-list" id="upcoming-list"></div>
 </div>
 
+<div id="study-section" style="display:none;">
+  <div class="section-title study-title">📚 Study Plan <span class="count-badge" id="study-count">0</span></div>
+  <div class="item-list" id="study-list"></div>
+</div>
+
 <div id="finished-section" style="display:none;">
   <div class="section-title">✓ Finished <span class="count-badge" id="finished-count">0</span></div>
   <div class="item-list" id="finished-list"></div>
 </div>
 
 <div class="legend">
-  <strong>Color guide:</strong> 🔴 Overdue (not done) · 🟠 Due within 3 days · 🟡 Due within 7 days · ⚪ Later · ✅ Finished<br>
+  <strong>Color guide:</strong> 🔴 Overdue (deadline) · 🟠 Due ≤3 days · 🟡 Due ≤7 days · ⚪ Later · 🟢 Study session · ✅ Finished<br>
   <strong>Courses:</strong> CS 231 = Algorithmic Problem Solving · AFM 231 = Business Law · CO 380 = Math Discovery &amp; Invention<br>
-  <strong>Times:</strong> University deadlines are set in Eastern Time (ET). The page converts them to your local timezone automatically.
+  <strong>Times:</strong> University deadlines are in Eastern Time, study sessions are in IST. The page converts both to your local timezone automatically.
 </div>
 
 <div class="footer">Filter saved locally. Source: <a href="https://github.com/coolncrazee/deadlines">github.com/coolncrazee/deadlines</a></div>
 
 <script>
-// Each deadline: { course, label, date (ISO with offset), done?, note? }
-// Set done: true once Krish reports completing it. Items past deadline without done:true show as Overdue at the top.
+// Each item: { course, label, date, done?, note?, type? }
+// type omitted = deadline. type: 'study' = green daily study session (not a deadline).
 const deadlines = [
   // CS 231 - 4:00 PM ET
   { course: 'cs', label: 'Quiz A', date: '2026-05-19T16:00:00-04:00', done: true },
@@ -270,6 +337,65 @@ const deadlines = [
 
   // Personal goals
   { course: 'goals', label: 'Resubmit MetaCogni Chrome Listing', date: '2026-05-25T23:59:00+05:30', note: 'End of day IST', done: true },
+
+  // ─── STUDY PLAN: 1hr/day @ 8:00 PM IST (= 14:30 UTC, = 10:30 AM EDT) ───
+  // Skip days = major assignment deadlines. Today's Study card highlights what's due today.
+  { type: 'study', course: 'cs', label: 'Module 1 review', date: '2026-06-04T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 2 review', date: '2026-06-05T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 3 review', date: '2026-06-06T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 4a-b', date: '2026-06-07T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 4 videos (offline on flight)', date: '2026-06-08T20:00:00+05:30', note: 'Travel day — light' },
+  { type: 'study', course: 'cs', label: 'Module 4c', date: '2026-06-09T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 4d', date: '2026-06-11T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 4 review + Exercise 4', date: '2026-06-13T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5a', date: '2026-06-14T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5b + Quiz D prep', date: '2026-06-15T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Quiz D debrief + Module 5c', date: '2026-06-16T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5d', date: '2026-06-17T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5e', date: '2026-06-18T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5f', date: '2026-06-19T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5g-h + Exercise 5', date: '2026-06-20T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 5i + Quiz E prep', date: '2026-06-21T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 6a', date: '2026-06-22T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Quiz E debrief + Module 6b', date: '2026-06-23T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4a part 1 — Organizational Forms', date: '2026-06-25T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4a part 2 — Organizational Forms', date: '2026-06-26T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 6c', date: '2026-06-27T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 6d', date: '2026-06-28T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 6e', date: '2026-06-29T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 6f + Exercise 6', date: '2026-06-30T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4b part 1 — Corporate Governance', date: '2026-07-01T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4b part 2 — Corporate Governance', date: '2026-07-02T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7a', date: '2026-07-03T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7b', date: '2026-07-04T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7c', date: '2026-07-05T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7 review + Quiz F prep', date: '2026-07-06T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Quiz F debrief + Module 7d', date: '2026-07-07T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4c part 1 — Banking & Credit', date: '2026-07-09T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 4c part 2 — Banking & Credit', date: '2026-07-10T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7e', date: '2026-07-11T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7f', date: '2026-07-12T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 7g + Quiz G prep', date: '2026-07-13T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Quiz G debrief + Module 7h', date: '2026-07-14T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 5a part 1 — Personal & Real Property', date: '2026-07-16T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 5a part 2 — Personal & Real Property', date: '2026-07-17T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8a', date: '2026-07-18T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8b', date: '2026-07-19T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8c', date: '2026-07-20T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8d', date: '2026-07-21T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 5b part 1 — Intellectual Property', date: '2026-07-23T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 5b part 2 — Intellectual Property', date: '2026-07-24T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8e', date: '2026-07-25T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8f', date: '2026-07-26T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 8 review + Quiz H prep', date: '2026-07-27T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Quiz H debrief + Module 9a', date: '2026-07-28T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 9b', date: '2026-07-29T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 9c', date: '2026-07-30T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 9d + Module 9 review', date: '2026-08-01T20:00:00+05:30' },
+  { type: 'study', course: 'afm', label: 'Unit 6 — Legal Risk Management', date: '2026-08-02T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 10a-b', date: '2026-08-03T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'Module 10c-d', date: '2026-08-04T20:00:00+05:30' },
+  { type: 'study', course: 'cs', label: 'FINAL REVIEW — Modules 10e-f, 11a-c', date: '2026-08-06T20:00:00+05:30', note: 'Day before exam. Light review only.' },
 ];
 
 const courseNames = {
@@ -318,7 +444,6 @@ function getLocalTzLabel() {
   }
 }
 
-// Countdown for upcoming items
 function countdown(date, now) {
   const diff = date - now;
   const totalMin = Math.floor(diff / 60000);
@@ -330,16 +455,12 @@ function countdown(date, now) {
   return `${days} days`;
 }
 
-// "Late by" countup for missed items
 function lateBy(date, now) {
   const diff = now - date;
   const totalMin = Math.floor(diff / 60000);
   const days = Math.floor(totalMin / 1440);
   const hours = Math.floor((totalMin % 1440) / 60);
-  if (days === 0 && hours === 0) {
-    const mins = totalMin;
-    return `${mins}m late`;
-  }
+  if (days === 0 && hours === 0) return `${totalMin}m late`;
   if (days === 0) return `${hours}h late`;
   if (days === 1) return `1 day late`;
   return `${days} days late`;
@@ -353,6 +474,12 @@ function urgencyForUpcoming(date, now) {
   return 'later';
 }
 
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
 function render() {
   const now = new Date();
   const filter = localStorage.getItem('deadline-filter') || 'all';
@@ -362,31 +489,58 @@ function render() {
     'Today: ' + now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   document.getElementById('tz-banner').innerHTML =
-    `🌍 Times shown in <strong>your local timezone</strong> (${tz.tz}, ${tz.offset}). Original ET time shown in grey for reference.`;
+    `🌍 Times shown in <strong>your local timezone</strong> (${tz.tz}, ${tz.offset}). Course deadlines are in ET; study sessions are in IST.`;
 
-  // Partition deadlines into three buckets
-  const done = deadlines.filter(d => d.done);
-  const notDone = deadlines.filter(d => !d.done);
-  const missed = notDone.filter(d => new Date(d.date) < now).sort((a, b) => new Date(a.date) - new Date(b.date)); // oldest-overdue first
-  const upcoming = notDone.filter(d => new Date(d.date) >= now).sort((a, b) => new Date(a.date) - new Date(b.date));
-  const finished = [...done].sort((a, b) => new Date(b.date) - new Date(a.date)); // most recent deadline first
+  // Partition
+  const studies = deadlines.filter(d => d.type === 'study');
+  const dls = deadlines.filter(d => d.type !== 'study');
 
-  // Active filter buttons
+  // Deadline buckets
+  const doneDls = dls.filter(d => d.done);
+  const notDoneDls = dls.filter(d => !d.done);
+  const missed = notDoneDls.filter(d => new Date(d.date) < now).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const upcoming = notDoneDls.filter(d => new Date(d.date) >= now).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const finished = [...doneDls].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Study buckets
+  const todayStudy = studies.find(s => sameDay(new Date(s.date), now));
+  const futureStudies = studies.filter(s => new Date(s.date) >= now && !sameDay(new Date(s.date), now)).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const pastStudies = studies.filter(s => new Date(s.date) < now && !sameDay(new Date(s.date), now)).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Today's Study card (always shown if there's a session today)
+  const todayCard = document.getElementById('today-study-card');
+  if (todayStudy) {
+    const d = new Date(todayStudy.date);
+    todayCard.className = 'today-study' + (todayStudy.done ? ' done' : '');
+    todayCard.innerHTML = `
+      <div class="icon">📚</div>
+      <div class="body">
+        <h2>Today's Study (1 hr)</h2>
+        <div class="item-title">${courseNames[todayStudy.course]}: ${todayStudy.label}</div>
+        <div class="meta">${fmtLocal(d)}${todayStudy.note ? ' · ' + todayStudy.note : ''}</div>
+      </div>
+    `;
+  } else {
+    todayCard.className = '';
+    todayCard.innerHTML = '';
+  }
+
+  // Filter buttons
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.filter === filter);
   });
 
-  // Apply filter for display purposes
   const matchesFilter = (d) => filter === 'all' || d.course === filter;
+
+  // Next-up panel (deadlines only — studies excluded)
   const missedFiltered = missed.filter(matchesFilter);
   const upcomingFiltered = upcoming.filter(matchesFilter);
-  const finishedFiltered = finished.filter(matchesFilter || (filter === 'finished'));
-  // ^ when filter === 'finished', show all finished regardless of course; we handle below
 
-  // Next-up panel — prioritize missed over upcoming
   const nextUp = document.getElementById('next-up');
-  if (filter === 'finished') {
-    // In Finished view, the next-up panel is less relevant
+  if (filter === 'study') {
+    nextUp.style.display = 'none';
+  } else if (filter === 'finished') {
+    nextUp.style.display = '';
     if (finished.length > 0) {
       const last = finished[0];
       const d = new Date(last.date);
@@ -398,10 +552,11 @@ function render() {
       `;
     } else {
       nextUp.classList.remove('has-missed');
-      nextUp.innerHTML = '<h2>Nothing finished yet</h2><div class="times">Mark items as done and they show here.</div>';
+      nextUp.innerHTML = '<h2>Nothing finished yet</h2>';
     }
   } else if (missedFiltered.length > 0) {
-    const m = missedFiltered[0]; // oldest-overdue
+    nextUp.style.display = '';
+    const m = missedFiltered[0];
     const d = new Date(m.date);
     nextUp.classList.add('has-missed');
     nextUp.innerHTML = `
@@ -411,6 +566,7 @@ function render() {
       <div class="countdown">${lateBy(d, now)}</div>
     `;
   } else if (upcomingFiltered.length > 0) {
+    nextUp.style.display = '';
     const next = upcomingFiltered[0];
     const d = new Date(next.date);
     nextUp.classList.remove('has-missed');
@@ -421,38 +577,43 @@ function render() {
       <div class="countdown">${countdown(d, now)} from now</div>
     `;
   } else {
+    nextUp.style.display = '';
     nextUp.classList.remove('has-missed');
-    nextUp.innerHTML = '<h2>✅ All done</h2><div class="times">No outstanding deadlines for this filter.</div>';
+    nextUp.innerHTML = '<h2>✅ All deadlines done</h2><div class="times">No outstanding deadlines for this filter.</div>';
   }
 
-  // Renderers
   function renderItem(d, kind) {
     const dt = new Date(d.date);
     let cls = '';
     let badgeCls = '';
     let badgeText = '';
     if (kind === 'missed') {
-      cls = 'missed';
-      badgeCls = 'missed';
-      badgeText = lateBy(dt, now);
+      cls = 'missed'; badgeCls = 'missed'; badgeText = lateBy(dt, now);
     } else if (kind === 'finished') {
-      cls = 'finished';
-      badgeCls = 'finished';
-      badgeText = '✓ Done';
+      cls = 'finished'; badgeCls = 'finished'; badgeText = '✓ Done';
+    } else if (kind === 'study-today') {
+      cls = 'study-today'; badgeCls = 'study'; badgeText = 'Today';
+    } else if (kind === 'study-done') {
+      cls = 'study-done'; badgeCls = 'study'; badgeText = '✓ Done';
+    } else if (kind === 'study-skipped') {
+      cls = 'study-skipped'; badgeCls = 'study-skipped'; badgeText = 'Skipped';
+    } else if (kind === 'study-future') {
+      cls = 'study-future'; badgeCls = 'study-neutral'; badgeText = countdown(dt, now);
     } else {
       const u = urgencyForUpcoming(dt, now);
       cls = u === 'urgent' ? 'urgent' : u === 'soon' ? 'soon' : '';
       badgeCls = u;
       badgeText = countdown(dt, now);
     }
+    const pillClass = d.type === 'study' ? d.course : d.course;
     return `
       <div class="item ${cls}">
-        <span class="pill ${d.course}">${courseNames[d.course]}</span>
+        <span class="pill ${pillClass}">${courseNames[d.course]}</span>
         <div class="item-body">
           <div class="label">${d.label}</div>
           <div class="date">
             <span class="your-time">${fmtLocal(dt)}</span>
-            <span class="et-time">(ET: ${fmtET(dt)})</span>
+            ${d.type === 'study' ? '' : `<span class="et-time">(ET: ${fmtET(dt)})</span>`}
           </div>
           ${d.note ? `<div class="note">${d.note}</div>` : ''}
         </div>
@@ -463,21 +624,37 @@ function render() {
 
   const missedSection = document.getElementById('missed-section');
   const upcomingSection = document.getElementById('upcoming-section');
+  const studySection = document.getElementById('study-section');
   const finishedSection = document.getElementById('finished-section');
 
-  if (filter === 'finished') {
-    // Show only finished
+  if (filter === 'study') {
     missedSection.style.display = 'none';
     upcomingSection.style.display = 'none';
+    finishedSection.style.display = 'none';
+    studySection.style.display = '';
+
+    // Today + future + past (past at bottom)
+    const items = [];
+    if (todayStudy) items.push({ d: todayStudy, kind: todayStudy.done ? 'study-done' : 'study-today' });
+    futureStudies.forEach(s => items.push({ d: s, kind: 'study-future' }));
+    pastStudies.forEach(s => items.push({ d: s, kind: s.done ? 'study-done' : 'study-skipped' }));
+
+    document.getElementById('study-count').textContent = studies.length;
+    document.getElementById('study-list').innerHTML = items.length > 0
+      ? items.map(i => renderItem(i.d, i.kind)).join('')
+      : '<div class="empty">No study sessions scheduled.</div>';
+  } else if (filter === 'finished') {
+    missedSection.style.display = 'none';
+    upcomingSection.style.display = 'none';
+    studySection.style.display = 'none';
     finishedSection.style.display = '';
-    const list = document.getElementById('finished-list');
     document.getElementById('finished-count').textContent = finished.length;
-    list.innerHTML = finished.length > 0
+    document.getElementById('finished-list').innerHTML = finished.length > 0
       ? finished.map(d => renderItem(d, 'finished')).join('')
       : '<div class="empty">Nothing finished yet.</div>';
   } else {
-    // Show missed + upcoming, hide finished
     finishedSection.style.display = 'none';
+    studySection.style.display = 'none';
 
     if (missedFiltered.length > 0) {
       missedSection.style.display = '';
@@ -488,8 +665,7 @@ function render() {
     }
 
     upcomingSection.style.display = '';
-    const upList = document.getElementById('upcoming-list');
-    upList.innerHTML = upcomingFiltered.length > 0
+    document.getElementById('upcoming-list').innerHTML = upcomingFiltered.length > 0
       ? upcomingFiltered.map(d => renderItem(d, 'upcoming')).join('')
       : '<div class="empty">Nothing upcoming.</div>';
   }
